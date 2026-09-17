@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, HTTPException, Request, Depends
 from sqlalchemy.orm import Session
 from fastapi.responses import RedirectResponse
@@ -12,9 +14,11 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # en desarrollo vale, en producción hay que restringir
+    allow_origins=[FRONTEND_ORIGIN],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

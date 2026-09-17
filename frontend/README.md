@@ -23,7 +23,10 @@ La imagen sirve el build de producción con nginx (puerto 80 dentro del contened
 del backend se hornea en el build a través de `VITE_API_URL`, así que la imagen publicada
 en Docker Hub sólo funciona tal cual si el backend está en `http://localhost:8000`.
 
-Imagen publicada en Docker Hub:
+Para levantar frontend y backend juntos con un volumen para la base de datos ya
+configurado, usa el `docker-compose.yml` de la raíz del repo (ver el
+[README raíz](../README.md)). Para levantar solo el frontend con la imagen
+publicada en Docker Hub:
 
 ```bash
 docker run -d \

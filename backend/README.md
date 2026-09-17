@@ -19,21 +19,39 @@ uvicorn main:app --reload
 El servidor se levanta por defecto en `http://127.0.0.1:8000`. La base de datos SQLite
 (`link-shortener.db`) se crea automáticamente en este directorio al arrancar.
 
+Por defecto solo acepta peticiones CORS desde `http://localhost:5173` (ver
+"Variables de entorno" más abajo).
+
 ## Puesta en marcha con Docker
 
-Imagen publicada en Docker Hub:
+Se recomienda usar el `docker-compose.yml` de la raíz del repo, que ya deja
+listos el volumen de la base de datos y las variables de entorno (ver el
+[README raíz](../README.md)). Para levantar solo el backend con la imagen
+publicada en Docker Hub:
 
 ```bash
 docker run -d \
   --name brev-backend \
   -p 8000:8000 \
-  -v brev_db:/app/link-shortener.db \
+  -e FRONTEND_ORIGIN=http://localhost:5173 \
+  -e DB_DIR=/app/data \
+  -v brev_db:/app/data \
   i32mumaj/brev-backend:latest
 ```
 
-- `-v brev_db:/app/link-shortener.db` persiste la base de datos en un volumen con nombre,
-  para que los datos sobrevivan si el contenedor se recrea.
+- `-v brev_db:/app/data` persiste la base de datos en un volumen con nombre, para
+  que los datos sobrevivan si el contenedor se recrea. Importante: el volumen se
+  monta sobre un **directorio** (`/app/data`, vía `DB_DIR`), no directamente sobre
+  el fichero `.db` — si se monta sobre un fichero que todavía no existe, Docker
+  crea ahí un directorio vacío y SQLite falla al abrirlo.
 - El servidor queda accesible en `http://localhost:8000`.
+
+## Variables de entorno
+
+| Variable | Por defecto | Descripción |
+|---|---|---|
+| `FRONTEND_ORIGIN` | `http://localhost:5173` | Único origen permitido en CORS. |
+| `DB_DIR` | `.` (directorio de `backend/`) | Carpeta donde vive `link-shortener.db`. |
 
 ### (Opcional) Poblar la base de datos con datos de prueba
 
@@ -96,5 +114,5 @@ seed.py       # Script para poblar la base de datos con datos de prueba
 
 ## Notas
 
-- La configuración de CORS actual permite todos los orígenes (`allow_origins=["*"]`); debe restringirse antes de pasar a producción.
+- CORS solo permite el origen configurado en `FRONTEND_ORIGIN` (ver "Variables de entorno").
 - La base de datos es SQLite (`link-shortener.db`) y se crea automáticamente al iniciar la app.

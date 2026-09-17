@@ -1,7 +1,12 @@
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-DATABASE_URL = "sqlite:///./link-shortener.db"
+DB_DIR = os.getenv("DB_DIR", ".")
+os.makedirs(DB_DIR, exist_ok=True)
+
+DATABASE_URL = f"sqlite:///{DB_DIR}/link-shortener.db"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
