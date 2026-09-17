@@ -7,12 +7,29 @@ Frontend del acortador de URLs con estadísticas de clics. React + TypeScript + 
 - Node.js 20+
 - El backend (FastAPI) corriendo en `http://localhost:8000` — ver `../backend`.
 
-## Puesta en marcha
+## Puesta en marcha sin Docker
 
 ```bash
 npm install
 cp .env.example .env   # ajusta VITE_API_URL si el backend no está en localhost:8000
 npm run dev
+```
+
+La app queda en `http://localhost:5173`.
+
+## Puesta en marcha con Docker
+
+La imagen sirve el build de producción con nginx (puerto 80 dentro del contenedor). La URL
+del backend se hornea en el build a través de `VITE_API_URL`, así que la imagen publicada
+en Docker Hub sólo funciona tal cual si el backend está en `http://localhost:8000`.
+
+Imagen publicada en Docker Hub:
+
+```bash
+docker run -d \
+  --name brev-frontend \
+  -p 5173:80 \
+  i32mumaj/brev-frontend:latest
 ```
 
 La app queda en `http://localhost:5173`.

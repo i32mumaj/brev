@@ -4,32 +4,49 @@ API backend para un acortador de URLs, construida con FastAPI y SQLAlchemy sobre
 
 ## Requisitos
 
-- Python 3.14+
+- Python 3.12+
 - pip
 
-## Instalación
+## Puesta en marcha sin Docker
 
 ```bash
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate       # en Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
-## Instalación con docker (recomendado)
-
-docker run -p 8000:8000 -v db_data:/app/link-shortener.db i32mumaj/brev-backend:latest
-
-## Ejecución
-
-```bash
 uvicorn main:app --reload
 ```
 
-El servidor se levanta por defecto en `http://127.0.0.1:8000`.
+El servidor se levanta por defecto en `http://127.0.0.1:8000`. La base de datos SQLite
+(`link-shortener.db`) se crea automáticamente en este directorio al arrancar.
+
+## Puesta en marcha con Docker
+
+Imagen publicada en Docker Hub:
+
+```bash
+docker run -d \
+  --name brev-backend \
+  -p 8000:8000 \
+  -v brev_db:/app/link-shortener.db \
+  i32mumaj/brev-backend:latest
+```
+
+- `-v brev_db:/app/link-shortener.db` persiste la base de datos en un volumen con nombre,
+  para que los datos sobrevivan si el contenedor se recrea.
+- El servidor queda accesible en `http://localhost:8000`.
 
 ### (Opcional) Poblar la base de datos con datos de prueba
 
+Sin Docker:
+
 ```bash
 python3 seed.py
+```
+
+Con Docker, dentro del contenedor en marcha:
+
+```bash
+docker exec -it brev-backend python3 seed.py
 ```
 
 Esto crea 30 enlaces de ejemplo con clics aleatorios distribuidos en los últimos 30 días.
