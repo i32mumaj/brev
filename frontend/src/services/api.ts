@@ -2,7 +2,11 @@
 // así la URL base vive en un solo sitio y no se dispersa por el código.
 import type { CreateLinkResponse, LinkStats } from '../types/link'
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Si no se fija VITE_API_URL en build, se asume que el backend vive en el mismo
+// host desde el que se sirve el frontend (puerto 8000) — así la imagen funciona
+// igual accedida por localhost o por la IP de la máquina en la red local.
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8000`
 
 export class ApiError extends Error {
   status: number

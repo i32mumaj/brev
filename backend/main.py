@@ -16,9 +16,20 @@ app = FastAPI()
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 
+# Permite además cualquier origen dentro de una red privada (LAN), para poder
+# abrir el frontend desde otro equipo de casa/oficina sin fijar una IP de antemano.
+LAN_ORIGIN_REGEX = (
+    r"^https?://(localhost|127\.0\.0\.1"
+    r"|192\.168\.\d{1,3}\.\d{1,3}"
+    r"|10\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    r"|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})"
+    r"(:\d+)?$"
+)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_ORIGIN],
+    allow_origin_regex=LAN_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
