@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DB_DIR = os.getenv("DB_DIR", ".")
+# Por defecto la base de datos vive en backend/, se arranque desde donde se arranque.
+DB_DIR = os.getenv("DB_DIR", Path(__file__).resolve().parents[3])
 os.makedirs(DB_DIR, exist_ok=True)
 
 DATABASE_URL = f"sqlite:///{DB_DIR}/link-shortener.db"

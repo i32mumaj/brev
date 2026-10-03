@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
-from database import SessionLocal, engine, Base
-from models import Link, Click
-from utils import hash_7_chars
 import random
-import models
+from datetime import datetime, timedelta, timezone
+
+from brev.database.database import Base, SessionLocal, engine
+from brev.database.models import Click, Link
+from brev.services.utils import generate_unique_code
 
 Base.metadata.create_all(bind=engine)
 
@@ -46,15 +46,9 @@ urls = [
     "https://tailwindcss.com",
 ]
 
-def generate_unique_code(url: str) -> str:
-    short_code = hash_7_chars(url)
-    while db.query(Link).filter(Link.short_code == short_code).first() is not None:
-        short_code = hash_7_chars(url + short_code)
-    return short_code
-
 sample_links = []
 for url in urls:
-    code = generate_unique_code(url)
+    code = generate_unique_code(db, url)
     sample_links.append(Link(short_code=code, original_url=url))
 
 db.add_all(sample_links)
@@ -65,7 +59,7 @@ for link in sample_links:
     num_clicks = random.randint(0, 50)
     for _ in range(num_clicks):
         days_ago = random.randint(0, 30)
-        clicked_at = datetime.now() - timedelta(days=days_ago, hours=random.randint(0, 23))
+        clicked_at = datetime.now(timezone.utc) - timedelta(days=days_ago, hours=random.randint(0, 23))
         db.add(Click(link_id=link.id, clicked_at=clicked_at))
 
 db.commit()
