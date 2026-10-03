@@ -14,10 +14,11 @@ export function ResultBanner({ url }: ResultBannerProps) {
   }, [url])
 
   function handleCopy() {
-    navigator.clipboard?.writeText(url).catch(() => {})
-    setCopied(true)
-    window.clearTimeout(timeoutRef.current)
-    timeoutRef.current = window.setTimeout(() => setCopied(false), 1800)
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true)
+      window.clearTimeout(timeoutRef.current)
+      timeoutRef.current = window.setTimeout(() => setCopied(false), 1800)
+    }).catch(() => {})
   }
 
   return (
