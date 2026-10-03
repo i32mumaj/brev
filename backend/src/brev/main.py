@@ -1,11 +1,11 @@
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from brev.database.database import Base, engine, get_db
-from brev.database.models import Click, Link
+from brev.database.models import Link
 from brev.schemas.schemas import (
     ErrorDetail,
     LinkCreate,
@@ -14,7 +14,14 @@ from brev.schemas.schemas import (
     LinkStats,
     Message,
 )
-from brev.services.utils import generate_unique_code
+from brev.services.click_services import register_click
+from brev.services.link_services import (
+    create_link,
+    delete_link,
+    get_link_by_code,
+    get_link_stats,
+    get_links,
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -26,12 +33,7 @@ NOT_FOUND: dict[int | str, dict[str, Any]] = {status.HTTP_404_NOT_FOUND: {"model
 
 
 def resolve_link(short_code: str, db: Session = DB) -> Link:
-    link = db.query(Link).filter(Link.short_code == short_code).first()
-
-    if not link:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
-
-    return link
+    return get_link_by_code(db, short_code)
 
 
 LINK = Depends(resolve_link)
@@ -44,25 +46,18 @@ LINK = Depends(resolve_link)
     responses=NOT_FOUND,
 )
 def redirect_link(link: Link = LINK, db: Session = DB):
-    db.add(Click(link_id=link.id))
-    db.commit()
+    register_click(db, link)
     return RedirectResponse(url=link.original_url)
 
 
 @app.post("/api/links")
 def shorten_link(payload: LinkCreate, request: Request, db: Session = DB) -> LinkCreated:
-    url_str = str(payload.url)
-    short_code = generate_unique_code(db, url_str)
-
-    db.add(Link(short_code=short_code, original_url=url_str))
-    db.commit()
-
-    return LinkCreated(short_url=f"{request.base_url}{short_code}")
+    return create_link(db, payload, str(request.base_url))
 
 
 @app.get("/api/links")
 def list_links(db: Session = DB) -> list[LinkOut]:
-    return [LinkOut.model_validate(link) for link in db.query(Link).all()]
+    return get_links(db)
 
 
 @app.get("/api/links/{short_code}", responses=NOT_FOUND)
@@ -72,16 +67,10 @@ def read_link(link: Link = LINK) -> LinkOut:
 
 @app.get("/api/links/{short_code}/stats", responses=NOT_FOUND)
 def read_link_stats(link: Link = LINK, db: Session = DB) -> LinkStats:
-    return LinkStats(
-        original_url=link.original_url,
-        short_code=link.short_code,
-        created_at=link.created_at,
-        click_count=db.query(Click).filter(Click.link_id == link.id).count(),
-    )
+    return get_link_stats(db, link)
 
 
 @app.delete("/api/links/{short_code}", responses=NOT_FOUND)
 def remove_link(link: Link = LINK, db: Session = DB) -> Message:
-    db.delete(link)
-    db.commit()
+    delete_link(db, link)
     return Message(message="Link deleted successfully")
