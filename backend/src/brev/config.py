@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     db_dir: Path = BACKEND_DIR / "data"
     cors_origins: Annotated[list[str], NoDecode] = []
     static_dir: Path | None = None
+    enable_docs: bool = True
 
     @field_validator("cors_origins", mode="before")
     @classmethod

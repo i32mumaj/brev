@@ -4,15 +4,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from brev.models import Link
-from brev.schemas import LinkCreate, LinkCreated, LinkOut, LinkStats
+from brev.schemas import LinkCreate, LinkCreated, LinkStats
 from brev.services.click_services import count_clicks
 from brev.services.utils import generate_unique_code
 
 MAX_CREATE_ATTEMPTS = 5
-
-
-def get_links(db: Session) -> list[LinkOut]:
-    return [LinkOut.model_validate(link) for link in db.scalars(select(Link))]
 
 
 def get_link_by_code(db: Session, short_code: str) -> Link:

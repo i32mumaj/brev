@@ -25,10 +25,15 @@ from brev.services.link_services import (
     delete_link,
     get_link_by_code,
     get_link_stats,
-    get_links,
 )
 
-app = FastAPI(title="brev", summary="URL shortener with click stats")
+app = FastAPI(
+    title="brev",
+    summary="URL shortener with click stats",
+    docs_url="/docs" if settings.enable_docs else None,
+    redoc_url="/redoc" if settings.enable_docs else None,
+    openapi_url="/openapi.json" if settings.enable_docs else None,
+)
 
 if settings.cors_origins:
     app.add_middleware(
@@ -59,11 +64,6 @@ def health(db: Session = DB) -> Message:
 @app.post("/api/links", status_code=status.HTTP_201_CREATED)
 def shorten_link(payload: LinkCreate, request: Request, db: Session = DB) -> LinkCreated:
     return create_link(db, payload, str(request.base_url))
-
-
-@app.get("/api/links")
-def list_links(db: Session = DB) -> list[LinkOut]:
-    return get_links(db)
 
 
 @app.get("/api/links/{short_code}", responses=NOT_FOUND)

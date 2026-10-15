@@ -27,7 +27,8 @@ USER brev
 
 ENV PATH="/app/backend/.venv/bin:$PATH" \
     DB_DIR=/app/data \
-    STATIC_DIR=/app/static
+    STATIC_DIR=/app/static \
+    ENABLE_DOCS=false
 
 EXPOSE 8000
 ENTRYPOINT ["docker-entrypoint.sh"]

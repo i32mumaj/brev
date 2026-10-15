@@ -52,12 +52,12 @@ sequenceDiagram
 
 ## API
 
-Interactive docs are available at `/docs`.
+Interactive docs are served at `/docs` in development. The Docker image turns them off
+(`ENABLE_DOCS=false`).
 
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/api/links` | Shorten a URL. Body `{"url": "..."}` → `201 {"short_url": "..."}` |
-| `GET` | `/api/links` | List all links |
 | `GET` | `/api/links/{code}` | Get one link |
 | `GET` | `/api/links/{code}/stats` | Original URL, code, creation date and total clicks |
 | `GET` | `/api/links/{code}/clicks?days=30` | Clicks per day, oldest first, days without clicks as 0 (`days` 1–365) |
@@ -84,6 +84,7 @@ docker compose exec brev python -m brev.seed
 | Variable | Default | Description |
 |---|---|---|
 | `PORT` | `8000` | Host port the app is published on |
+| `ENABLE_DOCS` | `false` | Serve `/docs`, `/redoc` and `/openapi.json` |
 | `CORS_ORIGINS` | empty | Comma-separated origins allowed to call the API cross-origin |
 | `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Proxies whose `X-Forwarded-*` headers are trusted |
 
@@ -111,7 +112,7 @@ brev.example.com {
 You need [uv](https://docs.astral.sh/uv/), which installs Python 3.14 for you, and Node.js 22.
 
 ```bash
-# backend, on http://localhost:8000
+# backend, on http://localhost:8000 (docs at /docs)
 cd backend
 uv run alembic upgrade head
 uv run python -m brev.seed        # optional: erases the database and loads 30 sample links

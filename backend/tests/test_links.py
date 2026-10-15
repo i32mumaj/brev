@@ -38,11 +38,9 @@ def test_create_link_rejects_invalid_urls(client: TestClient, url: str) -> None:
     assert client.post("/api/links", json={"url": url}).status_code == 422
 
 
-def test_list_and_read_link(client: TestClient, short_code: str) -> None:
-    listed = client.get("/api/links").json()
+def test_read_link(client: TestClient, short_code: str) -> None:
     read = client.get(f"/api/links/{short_code}").json()
 
-    assert [link["short_code"] for link in listed] == [short_code]
     assert read["original_url"] == "https://example.com/some/long/path"
     assert read["created_at"].endswith("Z")
 
@@ -82,3 +80,8 @@ def test_unknown_code_returns_404(client: TestClient, method: str, path: str) ->
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Link not found"}
+
+
+def test_links_cannot_be_listed(client: TestClient, short_code: str) -> None:
+    # Each browser only knows its own codes; there is no endpoint that reveals everyone's.
+    assert client.get("/api/links").status_code == 405
