@@ -11,6 +11,7 @@ and see how many times it has been opened, day by day.
 - Short codes derived from the URL's SHA-256, with collision handling
 - Click tracking on every redirect, with a per-day chart of the last 30 days
 - "Your links" history kept in the browser, with no accounts
+- Per-IP rate limiting
 - Light and dark themes
 - One Docker image serves the frontend and the API from the same origin
 
@@ -49,6 +50,13 @@ sequenceDiagram
 - **Same origin.** In production FastAPI serves the built frontend, and in
   development the Vite dev server proxies `/api` to the backend. Either way the
   frontend only uses relative paths and needs no API URL.
+- **Rate limiting.** Requests are limited per client IP (IPv6 clients per /64) with a
+  moving window, and the limit is checked before the route touches the database, so a
+  rejected redirect never counts as a click. Over the limit the API answers `429` with
+  a `Retry-After` header. Creating links is the strictest tier since it is the only one
+  that grows the database. Reads stay generous because the list view fetches the stats
+  of every saved link at once. Counters are kept in memory, which suits the single
+  process the app runs in.
 
 ## API
 
@@ -85,11 +93,15 @@ docker compose exec brev python -m brev.seed
 |---|---|---|
 | `PORT` | `8000` | Host port the app is published on |
 | `ENABLE_DOCS` | `false` | Serve `/docs`, `/redoc` and `/openapi.json` |
+| `RATE_LIMIT_CREATE` | `10/minute;100/day` | `POST /api/links` per client IP |
+| `RATE_LIMIT_REDIRECT` | `60/minute` | `GET /{code}` per client IP |
+| `RATE_LIMIT_API` | `300/minute` | Other `/api/links/{code}` routes per client IP |
 | `CORS_ORIGINS` | empty | Comma-separated origins allowed to call the API cross-origin |
 | `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Proxies whose `X-Forwarded-*` headers are trusted |
 
 Behind a reverse proxy such as nginx or Caddy, pass the original `Host` header through
-and set `FORWARDED_ALLOW_IPS` so that short URLs use the public domain and scheme.
+and set `FORWARDED_ALLOW_IPS` so that short URLs use the public domain and scheme. Rate
+limits rely on the same setting to see the real client IP instead of the proxy's.
 
 `compose.prod.yaml` covers the case where the proxy runs in Docker on an external `web`
 network: it removes the published port, trusts the proxy's headers and runs the container

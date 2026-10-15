@@ -3,6 +3,11 @@
 // (in development, through the Vite proxy).
 import type { CreateLinkResponse, DailyClicks, LinkStats } from '../types/link'
 
+const ERROR_MESSAGES: Record<number, string> = {
+  404: 'Enlace no encontrado.',
+  429: 'Demasiadas peticiones. Espera un momento y vuelve a intentarlo.',
+}
+
 export class ApiError extends Error {
   status: number
   notFound: boolean
@@ -26,8 +31,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const message = res.status === 404 ? 'Enlace no encontrado.' : 'Ha ocurrido un error inesperado.'
-    throw new ApiError(res.status, message)
+    throw new ApiError(res.status, ERROR_MESSAGES[res.status] ?? 'Ha ocurrido un error inesperado.')
   }
 
   if (res.status === 204) return undefined as T

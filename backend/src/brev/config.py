@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     cors_origins: Annotated[list[str], NoDecode] = []
     static_dir: Path | None = None
     enable_docs: bool = True
+    # Per client IP, in the format of the `limits` package: "10/minute;100/day".
+    rate_limit_create: str = "10/minute;100/day"
+    rate_limit_redirect: str = "60/minute"
+    rate_limit_api: str = "300/minute"
 
     @field_validator("cors_origins", mode="before")
     @classmethod

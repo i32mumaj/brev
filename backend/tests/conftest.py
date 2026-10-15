@@ -14,6 +14,12 @@ from sqlalchemy.pool import StaticPool
 
 from brev.db import Base, enable_foreign_keys, get_db
 from brev.main import app
+from brev.rate_limit import limiter
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits() -> None:
+    limiter.storage.reset()
 
 
 @pytest.fixture

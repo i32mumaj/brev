@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from brev.config import settings
 from brev.db import get_db
 from brev.models import Link
+from brev.rate_limit import rate_limit
 from brev.schemas import (
     DailyClicks,
     ErrorDetail,
@@ -46,6 +47,13 @@ if settings.cors_origins:
 DB = Depends(get_db)
 
 NOT_FOUND: dict[int | str, dict[str, Any]] = {status.HTTP_404_NOT_FOUND: {"model": ErrorDetail}}
+TOO_MANY: dict[int | str, dict[str, Any]] = {status.HTTP_429_TOO_MANY_REQUESTS: {"model": ErrorDetail}}
+
+# Route-level dependencies run before the endpoint's own, so a rejected request
+# never reaches the database.
+CREATE_LIMIT = rate_limit("create", settings.rate_limit_create)
+REDIRECT_LIMIT = rate_limit("redirect", settings.rate_limit_redirect)
+API_LIMIT = rate_limit("api", settings.rate_limit_api)
 
 
 def resolve_link(short_code: str, db: Session = DB) -> Link:
@@ -61,22 +69,22 @@ def health(db: Session = DB) -> Message:
     return Message(message="ok")
 
 
-@app.post("/api/links", status_code=status.HTTP_201_CREATED)
+@app.post("/api/links", status_code=status.HTTP_201_CREATED, dependencies=[CREATE_LIMIT], responses=TOO_MANY)
 def shorten_link(payload: LinkCreate, request: Request, db: Session = DB) -> LinkCreated:
     return create_link(db, payload, str(request.base_url))
 
 
-@app.get("/api/links/{short_code}", responses=NOT_FOUND)
+@app.get("/api/links/{short_code}", dependencies=[API_LIMIT], responses=NOT_FOUND | TOO_MANY)
 def read_link(link: Link = LINK) -> LinkOut:
     return LinkOut.model_validate(link)
 
 
-@app.get("/api/links/{short_code}/stats", responses=NOT_FOUND)
+@app.get("/api/links/{short_code}/stats", dependencies=[API_LIMIT], responses=NOT_FOUND | TOO_MANY)
 def read_link_stats(link: Link = LINK, db: Session = DB) -> LinkStats:
     return get_link_stats(db, link)
 
 
-@app.get("/api/links/{short_code}/clicks", responses=NOT_FOUND)
+@app.get("/api/links/{short_code}/clicks", dependencies=[API_LIMIT], responses=NOT_FOUND | TOO_MANY)
 def read_daily_clicks(
     days: Annotated[int, Query(ge=1, le=365)] = 30,
     link: Link = LINK,
@@ -85,7 +93,7 @@ def read_daily_clicks(
     return clicks_per_day(db, link, days)
 
 
-@app.delete("/api/links/{short_code}", responses=NOT_FOUND)
+@app.delete("/api/links/{short_code}", dependencies=[API_LIMIT], responses=NOT_FOUND | TOO_MANY)
 def remove_link(link: Link = LINK, db: Session = DB) -> Message:
     delete_link(db, link)
     return Message(message="Link deleted successfully")
@@ -110,7 +118,8 @@ if settings.static_dir:
     "/{short_code}",
     response_class=RedirectResponse,
     status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-    responses=NOT_FOUND,
+    dependencies=[REDIRECT_LIMIT],
+    responses=NOT_FOUND | TOO_MANY,
 )
 def redirect_link(link: Link = LINK, db: Session = DB) -> RedirectResponse:
     register_click(db, link)

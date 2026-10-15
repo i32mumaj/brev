@@ -28,7 +28,7 @@ export function useMyLinks(): UseMyLinks {
     const results = await Promise.allSettled(codes.map((code) => getLinkStats(code)))
 
     const fresh: LinkStats[] = []
-    let hadTransientError = false
+    let loadError: string | null = null
     results.forEach((result, index) => {
       const code = codes[index]
       if (result.status === 'fulfilled') {
@@ -37,8 +37,11 @@ export function useMyLinks(): UseMyLinks {
         // Gone from the backend (e.g. the database was reset), so forget it.
         removeStoredCode(code)
       } else {
-        // Network or server failure: keep the code and try again later.
-        hadTransientError = true
+        // Network, server or rate limit failure: keep the code and try again later.
+        loadError =
+          result.reason instanceof ApiError && result.reason.status === 429
+            ? result.reason.message
+            : 'No se han podido cargar todos tus enlaces. Comprueba que el servidor esté levantado.'
       }
     })
 
@@ -47,7 +50,7 @@ export function useMyLinks(): UseMyLinks {
     fresh.sort((a, b) => (order.get(a.short_code) ?? 0) - (order.get(b.short_code) ?? 0))
 
     setLinks(fresh)
-    setError(hadTransientError ? 'No se han podido cargar todos tus enlaces. Comprueba que el servidor esté levantado.' : null)
+    setError(loadError)
     setLoading(false)
   }, [])
 
