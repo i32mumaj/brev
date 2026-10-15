@@ -90,6 +90,22 @@ docker compose exec brev python -m brev.seed
 Behind a reverse proxy such as nginx or Caddy, pass the original `Host` header through
 and set `FORWARDED_ALLOW_IPS` so that short URLs use the public domain and scheme.
 
+`compose.prod.yaml` covers the case where the proxy runs in Docker on an external `web`
+network: it removes the published port, trusts the proxy's headers and runs the container
+read-only with all capabilities dropped and resource limits set. Enable it from `.env`:
+
+```bash
+COMPOSE_FILE=compose.yaml:compose.prod.yaml
+```
+
+The proxy then forwards to `brev:8000`. With Caddy:
+
+```
+brev.example.com {
+    reverse_proxy brev:8000
+}
+```
+
 ### Local development
 
 You need [uv](https://docs.astral.sh/uv/), which installs Python 3.14 for you, and Node.js 22.

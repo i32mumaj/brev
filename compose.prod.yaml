@@ -1,0 +1,21 @@
+# Production overlay for a host where a reverse proxy on the external "web"
+# network terminates TLS. Enable it with COMPOSE_FILE=compose.yaml:compose.prod.yaml.
+services:
+  brev:
+    container_name: brev
+    ports: !reset []
+    environment:
+      # No published ports, so X-Forwarded-* headers can only come from the proxy.
+      FORWARDED_ALLOW_IPS: "*"
+    networks: [web]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    deploy:
+      resources:
+        limits: { memory: 256M, cpus: "0.50", pids: 100 }
+
+networks:
+  web:
+    external: true
