@@ -6,6 +6,12 @@ export function formatDate(iso: string): string {
   })
 }
 
+// The API sends plain YYYY-MM-DD days; parsing them as local midnight keeps
+// new Date() from shifting them a day back in time zones west of UTC.
+export function formatDay(day: string): string {
+  return new Date(`${day}T00:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
 export function formatNumber(value: number): string {
   return value.toLocaleString('es-ES')
 }

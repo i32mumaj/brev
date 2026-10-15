@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Header } from './components/Header'
 import { ListPage } from './pages/ListPage'
-import { DetailPage } from './pages/DetailPage'
 import { useTheme } from './hooks/useTheme'
 import { useMyLinks } from './hooks/useMyLinks'
+
+// The detail view is the only one that draws charts, so recharts is loaded with it.
+const DetailPage = lazy(() => import('./pages/DetailPage').then((module) => ({ default: module.DetailPage })))
 
 type View = { name: 'list' } | { name: 'detail'; code: string }
 
@@ -28,7 +30,9 @@ function App() {
           onRetry={refresh}
         />
       ) : (
-        <DetailPage code={view.code} theme={theme} onBack={() => setView({ name: 'list' })} />
+        <Suspense fallback={<p className="state-message">Cargando…</p>}>
+          <DetailPage code={view.code} onBack={() => setView({ name: 'list' })} />
+        </Suspense>
       )}
     </div>
   )

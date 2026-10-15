@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Request, status
+from fastapi import Depends, FastAPI, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from sqlalchemy import text
@@ -10,6 +10,7 @@ from brev.config import settings
 from brev.db import get_db
 from brev.models import Link
 from brev.schemas import (
+    DailyClicks,
     ErrorDetail,
     LinkCreate,
     LinkCreated,
@@ -17,7 +18,7 @@ from brev.schemas import (
     LinkStats,
     Message,
 )
-from brev.services.click_services import register_click
+from brev.services.click_services import clicks_per_day, register_click
 from brev.services.link_services import (
     create_link,
     delete_link,
@@ -72,6 +73,15 @@ def read_link(link: Link = LINK) -> LinkOut:
 @app.get("/api/links/{short_code}/stats", responses=NOT_FOUND)
 def read_link_stats(link: Link = LINK, db: Session = DB) -> LinkStats:
     return get_link_stats(db, link)
+
+
+@app.get("/api/links/{short_code}/clicks", responses=NOT_FOUND)
+def read_daily_clicks(
+    days: Annotated[int, Query(ge=1, le=365)] = 30,
+    link: Link = LINK,
+    db: Session = DB,
+) -> list[DailyClicks]:
+    return clicks_per_day(db, link, days)
 
 
 @app.delete("/api/links/{short_code}", responses=NOT_FOUND)

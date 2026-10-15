@@ -1,7 +1,7 @@
 // The only HTTP client in the project: every backend call goes through here.
 // Paths are relative because the API is served from the same origin as the frontend
 // (in development, through the Vite proxy).
-import type { CreateLinkResponse, LinkStats } from '../types/link'
+import type { CreateLinkResponse, DailyClicks, LinkStats } from '../types/link'
 
 export class ApiError extends Error {
   status: number
@@ -43,6 +43,10 @@ export function createLink(url: string): Promise<CreateLinkResponse> {
 
 export function getLinkStats(shortCode: string): Promise<LinkStats> {
   return request<LinkStats>(`/api/links/${shortCode}/stats`)
+}
+
+export function getDailyClicks(shortCode: string, days: number): Promise<DailyClicks[]> {
+  return request<DailyClicks[]>(`/api/links/${shortCode}/clicks?days=${days}`)
 }
 
 export function deleteLink(shortCode: string): Promise<void> {

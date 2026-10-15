@@ -3,7 +3,7 @@ import type { Theme } from '../types/theme'
 
 const STORAGE_KEY = 'theme'
 const ACCENT_HUE = 165
-const ACCENT_BASE = { l: 0.78, c: 0.145 } // acento de marca, definido en el tema oscuro
+const ACCENT_BASE = { l: 0.78, c: 0.145 } // brand accent, defined on the dark theme
 
 const PALETTE: Record<Theme, Record<string, string>> = {
   dark: {

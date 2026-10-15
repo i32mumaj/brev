@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, HttpUrl, UrlConstraints
@@ -38,6 +38,11 @@ class LinkStats(BaseModel):
     short_code: str
     created_at: UtcDatetime
     click_count: int
+
+
+class DailyClicks(BaseModel):
+    date: date
+    count: int
 
 
 class Message(BaseModel):

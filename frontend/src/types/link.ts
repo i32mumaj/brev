@@ -10,3 +10,8 @@ export interface LinkStats {
   created_at: string
   click_count: number
 }
+
+export interface DailyClicks {
+  date: string
+  count: number
+}

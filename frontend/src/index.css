@@ -515,38 +515,62 @@ input:focus {
   font-variant-numeric: tabular-nums;
 }
 
-.meter-card {
+.chart-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 20px 16px;
+  gap: 18px;
+  padding: 20px 20px 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
 }
-.meter-card__head {
+.chart-card__head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
 }
-.meter-card__title {
+.chart-card__title {
   font-size: 14px;
   font-weight: 600;
 }
-.meter-card__value {
-  font-size: 20px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+.chart-card__range {
+  font-size: 11px;
+  color: var(--muted);
 }
-.meter-card__track-wrap {
+
+/* Recharts sets colors as SVG attributes; these rules win over them so the
+   chart follows the theme tokens without re-rendering on theme changes. */
+.clicks-chart {
+  height: 260px;
+  width: 100%;
+}
+.clicks-chart .recharts-bar-rectangle path {
+  fill: var(--accent);
+}
+.clicks-chart .recharts-cartesian-grid line {
+  stroke: var(--border);
+}
+.clicks-chart .recharts-cartesian-axis-tick-value {
+  fill: var(--muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.clicks-chart .recharts-tooltip-cursor {
+  fill: var(--surface2);
+}
+.chart-tooltip {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
 }
-.meter-card__scale {
-  display: flex;
-  justify-content: space-between;
+.chart-tooltip__day {
   font-size: 11px;
   color: var(--muted);
 }

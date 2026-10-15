@@ -1,23 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
 import { StatCard } from '../components/StatCard'
-import { ClicksMeter } from '../components/ClicksMeter'
+import { ClicksChart } from '../components/ClicksChart'
 import { ErrorBanner } from '../components/ErrorBanner'
-import { ApiError, getLinkStats } from '../services/api'
+import { ApiError, getDailyClicks, getLinkStats } from '../services/api'
 import { formatDate, formatNumber } from '../lib/format'
-import { CLICKS_SCALE_CAP } from '../lib/clicksScale'
-import type { LinkStats } from '../types/link'
-import type { Theme } from '../types/theme'
+import type { DailyClicks, LinkStats } from '../types/link'
 
 interface DetailPageProps {
   code: string
-  theme: Theme
   onBack: () => void
 }
 
-// Se pide /stats de nuevo al entrar (en vez de reusar la fila del listado) para
-// mostrar el contador más reciente: puede haber cambiado desde que se cargó la lista.
-export function DetailPage({ code, theme, onBack }: DetailPageProps) {
+const CHART_DAYS = 30
+
+// /stats is fetched again on entry (instead of reusing the list row) to show the
+// latest count: it may have changed since the list was loaded.
+export function DetailPage({ code, onBack }: DetailPageProps) {
   const [stats, setStats] = useState<LinkStats | null>(null)
+  const [daily, setDaily] = useState<DailyClicks[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -25,7 +25,9 @@ export function DetailPage({ code, theme, onBack }: DetailPageProps) {
     setLoading(true)
     setError(null)
     try {
-      setStats(await getLinkStats(code))
+      const [linkStats, dailyClicks] = await Promise.all([getLinkStats(code), getDailyClicks(code, CHART_DAYS)])
+      setStats(linkStats)
+      setDaily(dailyClicks)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo cargar el enlace.')
     } finally {
@@ -36,6 +38,8 @@ export function DetailPage({ code, theme, onBack }: DetailPageProps) {
   useEffect(() => {
     load()
   }, [load])
+
+  const lastWeek = daily.slice(-7).reduce((sum, day) => sum + day.count, 0)
 
   return (
     <section className="detail">
@@ -55,21 +59,16 @@ export function DetailPage({ code, theme, onBack }: DetailPageProps) {
 
           <div className="stat-grid">
             <StatCard label="CLICS TOTALES" value={formatNumber(stats.click_count)} />
+            <StatCard label="ÚLTIMOS 7 DÍAS" value={formatNumber(lastWeek)} />
             <StatCard label="CREADO" value={formatDate(stats.created_at)} />
           </div>
 
-          <div className="meter-card">
-            <div className="meter-card__head">
-              <span className="meter-card__title">Clics</span>
-              <span className="meter-card__value mono">{formatNumber(stats.click_count)}</span>
+          <div className="chart-card">
+            <div className="chart-card__head">
+              <span className="chart-card__title">Clics por día</span>
+              <span className="chart-card__range mono">ÚLTIMOS {CHART_DAYS} DÍAS</span>
             </div>
-            <div className="meter-card__track-wrap">
-              <ClicksMeter clicks={stats.click_count} theme={theme} />
-              <div className="meter-card__scale mono">
-                <span>0</span>
-                <span>{CLICKS_SCALE_CAP}+</span>
-              </div>
-            </div>
+            <ClicksChart data={daily} />
           </div>
         </>
       )}
