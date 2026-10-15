@@ -273,20 +273,49 @@ input:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.result-banner__copy {
-  height: 40px;
-  padding: 0 18px;
+
+/* Copy button */
+.copy-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface2);
   color: var(--text);
-  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  flex: none;
+  transition:
+    border-color 0.18s,
+    color 0.18s;
 }
-.result-banner__copy:hover {
+.copy-button--md {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.copy-button--lg {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+.copy-button:hover,
+.copy-button:focus-visible {
   border-color: var(--accent);
+}
+.copy-button--copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.copy-button__icon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* "Tus enlaces" section */
@@ -475,6 +504,13 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.detail__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  flex-wrap: wrap;
 }
 .detail__code {
   margin: 0;

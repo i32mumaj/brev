@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
@@ -85,3 +87,17 @@ def test_unknown_code_returns_404(client: TestClient, method: str, path: str) ->
 def test_links_cannot_be_listed(client: TestClient, short_code: str) -> None:
     # Each browser only knows its own codes; there is no endpoint that reveals everyone's.
     assert client.get("/api/links").status_code == 405
+
+
+def test_unknown_code_serves_the_404_page_when_the_frontend_is_built(
+    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    page = tmp_path / "404.html"
+    page.write_text("<h1>Este enlace no existe</h1>")
+    monkeypatch.setattr("brev.main.NOT_FOUND_PAGE", page)
+
+    response = client.get("/missing")
+
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Este enlace no existe" in response.text

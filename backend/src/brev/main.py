@@ -1,8 +1,8 @@
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Query, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -24,6 +24,7 @@ from brev.services.click_services import clicks_per_day, register_click
 from brev.services.link_services import (
     create_link,
     delete_link,
+    find_link,
     get_link_by_code,
     get_link_stats,
 )
@@ -61,6 +62,10 @@ def resolve_link(short_code: str, db: Session = DB) -> Link:
 
 
 LINK = Depends(resolve_link)
+
+# Visitors following a dead short link get a page instead of JSON, when the
+# frontend build is there to provide it.
+NOT_FOUND_PAGE = settings.static_dir / "404.html" if settings.static_dir else None
 
 
 @app.get("/api/health")
@@ -121,6 +126,12 @@ if settings.static_dir:
     dependencies=[REDIRECT_LIMIT],
     responses=NOT_FOUND | TOO_MANY,
 )
-def redirect_link(link: Link = LINK, db: Session = DB) -> RedirectResponse:
+def redirect_link(short_code: str, db: Session = DB) -> Response:
+    link = find_link(db, short_code)
+    if link is None:
+        if NOT_FOUND_PAGE is not None:
+            return FileResponse(NOT_FOUND_PAGE, status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
+
     register_click(db, link)
     return RedirectResponse(url=link.original_url)

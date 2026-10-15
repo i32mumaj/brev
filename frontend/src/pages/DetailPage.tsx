@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { StatCard } from '../components/StatCard'
 import { ClicksChart } from '../components/ClicksChart'
+import { CopyButton } from '../components/CopyButton'
 import { ErrorBanner } from '../components/ErrorBanner'
 import { ApiError, getDailyClicks, getLinkStats } from '../services/api'
-import { formatDate, formatNumber } from '../lib/format'
+import { formatDate, formatNumber, shortUrl } from '../lib/format'
 import type { DailyClicks, LinkStats } from '../types/link'
 
 interface DetailPageProps {
@@ -53,7 +54,10 @@ export function DetailPage({ code, onBack }: DetailPageProps) {
       {!loading && stats && (
         <>
           <div className="detail__heading">
-            <h1 className="detail__code mono">/{stats.short_code}</h1>
+            <div className="detail__title">
+              <h1 className="detail__code mono">/{stats.short_code}</h1>
+              <CopyButton text={shortUrl(stats.short_code)} label="Copiar enlace" />
+            </div>
             <span className="detail__original">{stats.original_url}</span>
           </div>
 

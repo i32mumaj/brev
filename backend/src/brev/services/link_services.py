@@ -11,8 +11,12 @@ from brev.services.utils import generate_unique_code
 MAX_CREATE_ATTEMPTS = 5
 
 
+def find_link(db: Session, short_code: str) -> Link | None:
+    return db.scalar(select(Link).where(Link.short_code == short_code))
+
+
 def get_link_by_code(db: Session, short_code: str) -> Link:
-    link = db.scalar(select(Link).where(Link.short_code == short_code))
+    link = find_link(db, short_code)
 
     if not link:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")

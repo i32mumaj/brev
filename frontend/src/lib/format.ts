@@ -16,6 +16,11 @@ export function formatNumber(value: number): string {
   return value.toLocaleString('es-ES')
 }
 
+// Short links are served from the same origin as the app.
+export function shortUrl(code: string): string {
+  return `${window.location.origin}/${code}`
+}
+
 export function truncate(value: string, max: number): string {
   return value.length > max ? `${value.slice(0, max)}…` : value
 }
