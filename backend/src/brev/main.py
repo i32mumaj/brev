@@ -1,12 +1,15 @@
 from typing import Any
 
 from fastapi import Depends, FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from brev.database.database import Base, engine, get_db
-from brev.database.models import Link
-from brev.schemas.schemas import (
+from brev.config import settings
+from brev.db import get_db
+from brev.models import Link
+from brev.schemas import (
     ErrorDetail,
     LinkCreate,
     LinkCreated,
@@ -23,9 +26,15 @@ from brev.services.link_services import (
     get_links,
 )
 
-Base.metadata.create_all(bind=engine)
+app = FastAPI(title="brev", summary="URL shortener with click stats")
 
-app = FastAPI()
+if settings.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_methods=["GET", "POST", "DELETE"],
+        allow_headers=["Content-Type"],
+    )
 
 DB = Depends(get_db)
 
@@ -39,18 +48,13 @@ def resolve_link(short_code: str, db: Session = DB) -> Link:
 LINK = Depends(resolve_link)
 
 
-@app.get(
-    "/{short_code}",
-    response_class=RedirectResponse,
-    status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-    responses=NOT_FOUND,
-)
-def redirect_link(link: Link = LINK, db: Session = DB):
-    register_click(db, link)
-    return RedirectResponse(url=link.original_url)
+@app.get("/api/health")
+def health(db: Session = DB) -> Message:
+    db.execute(text("SELECT 1"))
+    return Message(message="ok")
 
 
-@app.post("/api/links")
+@app.post("/api/links", status_code=status.HTTP_201_CREATED)
 def shorten_link(payload: LinkCreate, request: Request, db: Session = DB) -> LinkCreated:
     return create_link(db, payload, str(request.base_url))
 
@@ -74,3 +78,15 @@ def read_link_stats(link: Link = LINK, db: Session = DB) -> LinkStats:
 def remove_link(link: Link = LINK, db: Session = DB) -> Message:
     delete_link(db, link)
     return Message(message="Link deleted successfully")
+
+
+# Catch-all for short codes: registered last so it never shadows the routes above.
+@app.get(
+    "/{short_code}",
+    response_class=RedirectResponse,
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    responses=NOT_FOUND,
+)
+def redirect_link(link: Link = LINK, db: Session = DB) -> RedirectResponse:
+    register_click(db, link)
+    return RedirectResponse(url=link.original_url)

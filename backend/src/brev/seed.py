@@ -1,19 +1,13 @@
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from brev.database.database import Base, SessionLocal, engine
-from brev.database.models import Click, Link
+from sqlalchemy import delete
+
+from brev.db import SessionLocal
+from brev.models import Click, Link
 from brev.services.utils import generate_unique_code
 
-Base.metadata.create_all(bind=engine)
-
-db = SessionLocal()
-
-db.query(Click).delete()
-db.query(Link).delete()
-db.commit()
-
-urls = [
+URLS = [
     "https://www.youtube.com/watch?v=rGWF3ZsZPYs",
     "https://github.com",
     "https://fastapi.tiangolo.com",
@@ -46,23 +40,30 @@ urls = [
     "https://tailwindcss.com",
 ]
 
-sample_links = []
-for url in urls:
-    code = generate_unique_code(db, url)
-    sample_links.append(Link(short_code=code, original_url=url))
 
-db.add_all(sample_links)
-db.commit()
+def main() -> None:
+    with SessionLocal() as db:
+        db.execute(delete(Click))
+        db.execute(delete(Link))
+        db.commit()
 
-for link in sample_links:
-    db.refresh(link)
-    num_clicks = random.randint(0, 50)
-    for _ in range(num_clicks):
-        days_ago = random.randint(0, 30)
-        clicked_at = datetime.now(timezone.utc) - timedelta(days=days_ago, hours=random.randint(0, 23))
-        db.add(Click(link_id=link.id, clicked_at=clicked_at))
+        links = []
+        for url in URLS:
+            link = Link(short_code=generate_unique_code(db, url), original_url=url)
+            db.add(link)
+            db.flush()
+            links.append(link)
 
-db.commit()
-db.close()
+        now = datetime.now(UTC)
+        for link in links:
+            for _ in range(random.randint(0, 50)):
+                ago = timedelta(days=random.randint(0, 29), hours=random.randint(0, 23))
+                db.add(Click(link_id=link.id, clicked_at=now - ago))
 
-print(f"Base de datos poblada con {len(sample_links)} enlaces y clics de prueba.")
+        db.commit()
+
+    print(f"Seeded {len(links)} links with sample clicks.")
+
+
+if __name__ == "__main__":
+    main()

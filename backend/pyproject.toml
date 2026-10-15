@@ -1,14 +1,16 @@
 [project]
 name = "brev"
 version = "0.1.0"
-description = "Acortador de URLs con contador de clics"
+description = "URL shortener with click stats"
 authors = [
     { name = "i32mumaj", email = "jorgemuniz2005@gmail.com" }
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "alembic>=1.20.0",
     "fastapi[standard]>=0.142.2",
     "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
     "sqlalchemy>=2.1.1",
 ]
 
@@ -18,3 +20,27 @@ entrypoint = "brev.main:app"
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+# The local alembic/ migrations folder would otherwise pass for first-party code.
+known-third-party = ["alembic"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

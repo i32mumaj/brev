@@ -1,27 +1,29 @@
 import hashlib
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from brev.database.models import Link
+from brev.models import Link
+
+ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+CODE_LENGTH = 7
 
 
 def hash_7_chars(url: str) -> str:
-    hash_bytes = hashlib.sha256(url.encode('utf-8')).digest()
-    hash_int = int.from_bytes(hash_bytes, 'big')
+    hash_int = int.from_bytes(hashlib.sha256(url.encode("utf-8")).digest(), "big")
 
-    chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     result = ""
-    while len(result) < 7:
-        hash_int, rest = divmod(hash_int, 62)
-        result += chars[rest]
+    while len(result) < CODE_LENGTH:
+        hash_int, rest = divmod(hash_int, len(ALPHABET))
+        result += ALPHABET[rest]
 
-    return result[:7]
+    return result
 
 
 def generate_unique_code(db: Session, url: str) -> str:
-    # La misma URL puede acortarse varias veces, así que en colisión se
-    # re-hashea encadenando el código anterior hasta dar con uno libre.
+    # The same URL can be shortened several times, so on a collision the code is
+    # re-hashed chained to the previous one until a free one turns up.
     short_code = hash_7_chars(url)
-    while db.query(Link).filter(Link.short_code == short_code).first() is not None:
+    while db.scalar(select(Link.id).where(Link.short_code == short_code)) is not None:
         short_code = hash_7_chars(url + short_code)
     return short_code

@@ -1,6 +1,7 @@
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from brev.database.models import Click, Link
+from brev.models import Click, Link
 
 
 def register_click(db: Session, link: Link) -> None:
@@ -9,4 +10,4 @@ def register_click(db: Session, link: Link) -> None:
 
 
 def count_clicks(db: Session, link: Link) -> int:
-    return db.query(Click).filter(Click.link_id == link.id).count()
+    return db.scalar(select(func.count()).where(Click.link_id == link.id)) or 0

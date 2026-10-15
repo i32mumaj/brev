@@ -2,12 +2,14 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, HttpUrl
+from pydantic import AfterValidator, BaseModel, ConfigDict, HttpUrl, UrlConstraints
+
+MAX_URL_LENGTH = 2048
 
 
 def _as_utc(value: datetime) -> datetime:
-    # SQLite no guarda la zona horaria: las fechas se escriben en UTC y vuelven
-    # sin tzinfo, así que se la ponemos para que el JSON lleve la "Z".
+    # SQLite does not store the time zone: dates are written in UTC and come back
+    # naive, so it is added back for the JSON to carry the "Z".
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value
 
 
@@ -15,7 +17,7 @@ UtcDatetime = Annotated[datetime, AfterValidator(_as_utc)]
 
 
 class LinkCreate(BaseModel):
-    url: HttpUrl
+    url: Annotated[HttpUrl, UrlConstraints(max_length=MAX_URL_LENGTH)]
 
 
 class LinkCreated(BaseModel):
