@@ -5,37 +5,17 @@ Frontend del acortador de URLs con estadísticas de clics. React + TypeScript + 
 ## Requisitos
 
 - Node.js 20+
-- El backend (FastAPI) corriendo en `http://localhost:8000` — ver `../backend`.
+- El backend (FastAPI) corriendo en `http://localhost:8000` — ver el [README raíz](../README.md).
 
-## Puesta en marcha sin Docker
+## Puesta en marcha
 
 ```bash
 npm install
-cp .env.example .env   # ajusta VITE_API_URL si el backend no está en localhost:8000
 npm run dev
 ```
 
-La app queda en `http://localhost:5173`.
-
-## Puesta en marcha con Docker
-
-La imagen sirve el build de producción con nginx (puerto 80 dentro del contenedor). La URL
-del backend se hornea en el build a través de `VITE_API_URL`, así que la imagen publicada
-en Docker Hub sólo funciona tal cual si el backend está en `http://localhost:8000`.
-
-Para levantar frontend y backend juntos con un volumen para la base de datos ya
-configurado, usa el `docker-compose.yml` de la raíz del repo (ver el
-[README raíz](../README.md)). Para levantar solo el frontend con la imagen
-publicada en Docker Hub:
-
-```bash
-docker run -d \
-  --name brev-frontend \
-  -p 5173:80 \
-  i32mumaj/brev-frontend:latest
-```
-
-La app queda en `http://localhost:5173`.
+La app queda en `http://localhost:5173`. El servidor de Vite reenvía `/api` al backend,
+así que front y API comparten origen igual que en producción.
 
 ## Scripts
 

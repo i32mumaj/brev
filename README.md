@@ -54,8 +54,7 @@ choca con uno existente, se vuelve a hashear encadenando el código anterior.
 ```bash
 cd frontend
 npm install
-cp .env.example .env
-npm run dev                       # http://localhost:5173
+npm run dev                       # http://localhost:5173, /api va al backend por proxy
 ```
 
 Más detalle en [`frontend/README.md`](frontend/README.md).

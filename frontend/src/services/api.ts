@@ -1,12 +1,7 @@
-// Única puerta de salida HTTP del proyecto. Todas las llamadas al backend pasan por aquí:
-// así la URL base vive en un solo sitio y no se dispersa por el código.
+// Única puerta de salida HTTP del proyecto. Todas las llamadas al backend pasan por aquí.
+// Las rutas son relativas porque la API se sirve desde el mismo origen que el front
+// (en desarrollo, a través del proxy de Vite).
 import type { CreateLinkResponse, LinkStats } from '../types/link'
-
-// Si no se fija VITE_API_URL en build, se asume que el backend vive en el mismo
-// host desde el que se sirve el frontend (puerto 8000) — así la imagen funciona
-// igual accedida por localhost o por la IP de la máquina en la red local.
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8000`
 
 export class ApiError extends Error {
   status: number
@@ -22,7 +17,7 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`${API_BASE_URL}${path}`, {
+    res = await fetch(path, {
       headers: { 'Content-Type': 'application/json' },
       ...init,
     })
