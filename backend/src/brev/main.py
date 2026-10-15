@@ -2,7 +2,8 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -88,6 +89,20 @@ def read_daily_clicks(
 def remove_link(link: Link = LINK, db: Session = DB) -> Message:
     delete_link(db, link)
     return Message(message="Link deleted successfully")
+
+
+if settings.static_dir:
+    # Production build of the frontend, served from the same origin as the API.
+    static_dir = settings.static_dir
+    app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
+
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(static_dir / "index.html")
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    def favicon() -> FileResponse:
+        return FileResponse(static_dir / "favicon.svg")
 
 
 # Catch-all for short codes: registered last so it never shadows the routes above.
