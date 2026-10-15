@@ -29,13 +29,13 @@ function readInitialTheme(): Theme {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'dark' || stored === 'light') return stored
   } catch {
-    // Sin localStorage disponible, se usa el tema por defecto.
+    // Without localStorage, fall back to the default theme.
   }
   return 'dark'
 }
 
-// El acento en claro se deriva del mismo hue con menos luz y algo más de croma,
-// en vez de mantener mecánicamente los mismos números para los dos temas.
+// The light accent is derived from the same hue with less lightness and a bit more
+// chroma, instead of reusing the dark theme's numbers as they are.
 function applyTheme(theme: Theme): void {
   const root = document.documentElement.style
   const palette = PALETTE[theme]
@@ -58,7 +58,7 @@ export function useTheme(): { theme: Theme; toggleTheme: () => void } {
     try {
       localStorage.setItem(STORAGE_KEY, theme)
     } catch {
-      // idem: sin persistencia si no hay localStorage.
+      // Same as above: no persistence without localStorage.
     }
   }, [theme])
 

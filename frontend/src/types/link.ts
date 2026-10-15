@@ -1,4 +1,4 @@
-// Formas de datos tal y como las devuelve el backend.
+// Data shapes exactly as the backend returns them.
 
 export interface CreateLinkResponse {
   short_url: string

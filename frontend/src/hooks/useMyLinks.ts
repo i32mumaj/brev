@@ -13,8 +13,8 @@ interface UseMyLinks {
   refresh: () => void
 }
 
-// Fuente de la lista: los códigos guardados en localStorage, uno a uno contra
-// /api/links/{code}/stats. No hay listado global que pedir.
+// The list comes from the codes stored in localStorage, each one resolved against
+// /api/links/{code}/stats. There is no global listing to fetch.
 export function useMyLinks(): UseMyLinks {
   const [links, setLinks] = useState<LinkStats[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,15 +34,15 @@ export function useMyLinks(): UseMyLinks {
       if (result.status === 'fulfilled') {
         fresh.push(result.value)
       } else if (result.reason instanceof ApiError && result.reason.notFound) {
-        // Ya no existe en el backend (p.ej. se reseteó la base de datos): se olvida.
+        // Gone from the backend (e.g. the database was reset), so forget it.
         removeStoredCode(code)
       } else {
-        // Fallo de red o del servidor: no se descarta el código, se reintentará luego.
+        // Network or server failure: keep the code and try again later.
         hadTransientError = true
       }
     })
 
-    // getStoredCodes() ya devuelve el orden "más reciente primero"; se conserva.
+    // getStoredCodes() already returns newest first; keep that order.
     const order = new Map(codes.map((code, index) => [code, index]))
     fresh.sort((a, b) => (order.get(a.short_code) ?? 0) - (order.get(b.short_code) ?? 0))
 
@@ -66,7 +66,7 @@ export function useMyLinks(): UseMyLinks {
         const stats = await getLinkStats(code)
         setLinks((current) => [stats, ...current])
       } catch {
-        // El enlace se creó bien; si este refetch puntual falla, aparecerá en el próximo refresh.
+        // The link was created; if this refetch fails it will show up on the next refresh.
       }
       return short_url
     } finally {

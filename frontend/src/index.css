@@ -1,5 +1,5 @@
-/* Tokens de color. El valor inicial es el tema oscuro; useTheme() los reescribe
-   en :root al montar y al cambiar de tema (ver src/hooks/useTheme.ts). */
+/* Color tokens. These start as the dark theme; useTheme() rewrites them on :root
+   on mount and whenever the theme changes (see src/hooks/useTheme.ts). */
 :root {
   --bg: oklch(0.17 0.012 265);
   --surface: oklch(0.212 0.014 265);
@@ -139,7 +139,7 @@ input:focus {
   transform: translateX(24px);
 }
 
-/* Hero + formulario */
+/* Hero + form */
 .hero {
   display: flex;
   flex-direction: column;
@@ -207,7 +207,7 @@ input:focus {
   opacity: 0.7;
 }
 
-/* Banners de error y de resultado */
+/* Error and result banners */
 .banner {
   display: flex;
   align-items: center;
@@ -289,7 +289,7 @@ input:focus {
   border-color: var(--accent);
 }
 
-/* Sección "Tus enlaces" */
+/* "Tus enlaces" section */
 .links-section {
   display: flex;
   flex-direction: column;
@@ -449,7 +449,7 @@ input:focus {
   }
 }
 
-/* Vista de detalle */
+/* Detail view */
 .detail {
   display: flex;
   flex-direction: column;
@@ -551,7 +551,7 @@ input:focus {
   color: var(--muted);
 }
 
-/* Estados de carga */
+/* Loading states */
 .state-message {
   padding: 40px 24px;
   text-align: center;

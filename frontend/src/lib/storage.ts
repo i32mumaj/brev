@@ -1,5 +1,5 @@
-// "Tus enlaces" no viene de un listado global del backend (no existe): es la lista
-// de códigos que este navegador ha creado, guardada en localStorage.
+// "Tus enlaces" is not a global backend listing (there is none): it is the list of
+// codes this browser has created, kept in localStorage.
 const STORAGE_KEY = 'shortened-links'
 const TTL_DAYS = 30
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000
@@ -33,12 +33,12 @@ function writeAll(items: StoredLink[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   } catch {
-    // localStorage puede no estar disponible (modo privado, cuota llena, etc.).
-    // La app sigue funcionando, simplemente sin recordar los enlaces al recargar.
+    // localStorage may be unavailable (private mode, quota exceeded, etc.).
+    // The app keeps working, it just won't remember links across reloads.
   }
 }
 
-/** Códigos "vivos" (dentro del TTL), más reciente primero. Purga los caducados de paso. */
+/** Codes still within the TTL, newest first. Expired ones are purged along the way. */
 export function getStoredCodes(): string[] {
   const now = Date.now()
   const items = readAll()

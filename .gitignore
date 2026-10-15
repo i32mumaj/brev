@@ -5,9 +5,12 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .venv/
+venv/
 env/
 ENV/
+.ruff_cache/
 *.db
+backend/data/
 
 # --- Node (frontend) ---
 node_modules/
@@ -15,7 +18,7 @@ dist/
 dist-ssr/
 *.local
 
-# --- Variables de entorno ---
+# --- Environment ---
 .env
 .env.local
 .env.*.local
@@ -29,7 +32,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# --- Editor / SO ---
+# --- Editor / OS ---
 .vscode/*
 !.vscode/extensions.json
 .idea/

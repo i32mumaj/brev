@@ -1,6 +1,6 @@
-// Única puerta de salida HTTP del proyecto. Todas las llamadas al backend pasan por aquí.
-// Las rutas son relativas porque la API se sirve desde el mismo origen que el front
-// (en desarrollo, a través del proxy de Vite).
+// The only HTTP client in the project: every backend call goes through here.
+// Paths are relative because the API is served from the same origin as the frontend
+// (in development, through the Vite proxy).
 import type { CreateLinkResponse, LinkStats } from '../types/link'
 
 export class ApiError extends Error {

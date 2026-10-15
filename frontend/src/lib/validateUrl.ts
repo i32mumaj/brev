@@ -1,5 +1,5 @@
-// Validación básica en cliente: sólo filtra lo obviamente inválido antes de llamar
-// a la API. El backend valida de verdad con pydantic (HttpUrl) y es quien manda.
+// Basic client-side check that only filters out obviously invalid input before
+// calling the API. The backend does the real validation with pydantic (HttpUrl).
 export function isValidUrl(value: string): boolean {
   try {
     const url = new URL(value)
