@@ -1,60 +1,148 @@
-# brev — acortador de URLs con estadísticas de clics
+# brev
 
-Acortador de URLs que además lleva la cuenta de los clics de cada enlace.
+[![CI](https://github.com/i32mumaj/brev/actions/workflows/ci.yml/badge.svg)](https://github.com/i32mumaj/brev/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+A URL shortener that counts every click. Paste a long URL, get a 7-character link,
+and see how many times it has been opened, day by day.
+
+## Features
+
+- Short codes derived from the URL's SHA-256, with collision handling
+- Click tracking on every redirect, with a per-day chart of the last 30 days
+- "Your links" history kept in the browser, with no accounts
+- Light and dark themes
+- One Docker image serves the frontend and the API from the same origin
+
+## Stack
+
+| | |
+|---|---|
+| Backend | Python 3.14, FastAPI, SQLAlchemy 2, Alembic, SQLite, uv |
+| Frontend | React 19, TypeScript, Vite, Recharts |
+| Quality | pytest, ruff, mypy (strict), vitest, oxlint, GitHub Actions |
+| Deploy | Docker multi-stage build, Docker Compose |
+
+## How it works
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant A as FastAPI
+    participant D as SQLite
+    B->>A: POST /api/links {url}
+    A->>D: insert link with a free short code
+    A-->>B: 201 {short_url}
+    B->>A: GET /{short_code}
+    A->>D: insert click
+    A-->>B: 307 redirect to the original URL
 ```
-brev/
-├── backend/     FastAPI + SQLAlchemy + SQLite — API y redirecciones
-└── frontend/    React + Vite + TypeScript — interfaz web
+
+- **Short codes.** The code is the first 7 base62 characters of the URL's SHA-256.
+  The same URL can be shortened more than once, so when a code is taken it is
+  re-hashed together with the previous code until a free one turns up. If two
+  requests race for the same code, the database's unique constraint rejects the
+  second one and it retries.
+- **"Your links".** There are no users. The browser keeps the codes it created in
+  `localStorage` for 30 days and asks `/stats` for each one. Codes the backend no
+  longer knows are dropped.
+- **Same origin.** In production FastAPI serves the built frontend, and in
+  development the Vite dev server proxies `/api` to the backend. Either way the
+  frontend only uses relative paths and needs no API URL.
+
+## API
+
+Interactive docs are available at `/docs`.
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/links` | Shorten a URL. Body `{"url": "..."}` → `201 {"short_url": "..."}` |
+| `GET` | `/api/links` | List all links |
+| `GET` | `/api/links/{code}` | Get one link |
+| `GET` | `/api/links/{code}/stats` | Original URL, code, creation date and total clicks |
+| `GET` | `/api/links/{code}/clicks?days=30` | Clicks per day, oldest first, days without clicks as 0 (`days` 1–365) |
+| `DELETE` | `/api/links/{code}` | Delete a link and its clicks |
+| `GET` | `/api/health` | Health check |
+| `GET` | `/{code}` | Redirect to the original URL and record a click |
+
+## Running it
+
+### With Docker
+
+```bash
+cp .env.example .env              # optional: change the port and other settings
+docker compose up -d --build      # http://localhost:8000
 ```
 
-## Backend
+The database is stored on the `brev_data` volume and migrations run when the container
+starts. To load sample data (this **erases** the database):
 
-Requiere [uv](https://docs.astral.sh/uv/) (se encarga de instalar Python 3.14 y las dependencias).
+```bash
+docker compose exec brev python -m brev.seed
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `8000` | Host port the app is published on |
+| `CORS_ORIGINS` | empty | Comma-separated origins allowed to call the API cross-origin |
+| `FORWARDED_ALLOW_IPS` | `127.0.0.1` | Proxies whose `X-Forwarded-*` headers are trusted |
+
+Behind a reverse proxy such as nginx or Caddy, pass the original `Host` header through
+and set `FORWARDED_ALLOW_IPS` so that short URLs use the public domain and scheme.
+
+### Local development
+
+You need [uv](https://docs.astral.sh/uv/), which installs Python 3.14 for you, and Node.js 22.
+
+```bash
+# backend, on http://localhost:8000
+cd backend
+uv run alembic upgrade head
+uv run python -m brev.seed        # optional: erases the database and loads 30 sample links
+uv run fastapi dev
+
+# frontend, on http://localhost:5173 (proxies /api to :8000)
+cd frontend
+npm install
+npm run dev
+```
+
+The SQLite file is created in `backend/data/`. Set `DB_DIR` to put it somewhere else.
+
+### Tests and checks
 
 ```bash
 cd backend
-uv run fastapi dev                # http://localhost:8000, docs en /docs
-uv run python -m brev.seed        # opcional: BORRA todo y crea 30 enlaces de prueba
-```
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+uv run mypy src alembic tests
 
-La base de datos SQLite (`link-shortener.db`) se crea sola en `backend/data/`. Se puede
-cambiar la carpeta con la variable de entorno `DB_DIR`.
-
-### Endpoints
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `POST` | `/api/links` | Crea un enlace corto. Body `{"url": "..."}` → `{"short_url": "..."}` |
-| `GET` | `/api/links` | Lista todos los enlaces |
-| `GET` | `/api/links/{short_code}` | Datos de un enlace |
-| `GET` | `/api/links/{short_code}/stats` | URL original, código, fecha de creación y número de clics |
-| `DELETE` | `/api/links/{short_code}` | Borra un enlace y sus clics |
-| `GET` | `/{short_code}` | Redirige a la URL original y registra el clic |
-
-### Estructura
-
-```
-backend/src/brev/
-├── main.py                 rutas
-├── seed.py                 datos de prueba
-├── database/               conexión (database.py) y modelos Link / Click (models.py)
-├── schemas/schemas.py      esquemas Pydantic de entrada y salida
-└── services/
-    ├── link_services.py    lógica de enlaces
-    ├── click_services.py   lógica de clics
-    └── utils.py            generación del código corto
-```
-
-El código corto son 7 caracteres en base62 sacados del SHA-256 de la URL. Si
-choca con uno existente, se vuelve a hashear encadenando el código anterior.
-
-## Frontend
-
-```bash
 cd frontend
-npm install
-npm run dev                       # http://localhost:5173, /api va al backend por proxy
+npm test
+npm run lint
+npm run build                     # also type-checks
 ```
 
-Más detalle en [`frontend/README.md`](frontend/README.md).
+## Project layout
+
+```
+backend/
+├── alembic/              migrations
+├── src/brev/
+│   ├── main.py           routes (plus the built frontend when STATIC_DIR is set)
+│   ├── config.py         settings from the environment
+│   ├── db.py, models.py  engine, session and the Link / Click models
+│   ├── schemas.py        request and response models
+│   └── services/         link and click logic, short code generation
+└── tests/
+frontend/src/
+├── pages/                list and detail views
+├── components/
+├── hooks/                theme and "your links" state
+├── services/api.ts       the only HTTP client
+└── lib/                  validation, formatting, localStorage
+```
+
+## License
+
+[MIT](LICENSE)
